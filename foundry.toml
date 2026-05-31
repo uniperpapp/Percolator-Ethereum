@@ -6,6 +6,9 @@ test = "test"
 solc_version = "0.8.28"
 optimizer = true
 optimizer_runs = 200
+# via-IR avoids "stack too deep" in the math-heavy SolvencyProof / RiskEngine
+# libraries (many locals on the §1.6 proof path) and yields better codegen.
+via_ir = true
 # 256-bit native math + checked arithmetic by default (Solidity >=0.8).
 # Percolator's engine relies on exact integer rounding; never enable
 # unchecked globally — only at proven-bounded call sites.
