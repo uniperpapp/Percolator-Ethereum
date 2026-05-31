@@ -64,7 +64,7 @@ contract PerpMarket is ReentrancyGuard {
     error NotPositionOwner();
     error InsufficientEquity(int256 available, uint256 requested);
     error VaultBalanceShort();
-    error VaultCapExceeded();
+    error AmountTooLarge();
 
     modifier onlyInit() {
         if (!_initialized) revert NotInitialized();
@@ -182,9 +182,11 @@ contract PerpMarket is ReentrancyGuard {
         token.safeTransferFrom(msg.sender, address(this), amount);
         uint256 credited = token.balanceOf(address(this)) - balBefore;
         if (credited == 0) revert ZeroAmount();
-        // Enforce the spec vault-TVL cap. This also keeps vault/capital < uint128 max,
-        // so the uint128 cast below cannot truncate.
-        if (g.vault + credited > Constants.MAX_VAULT_TVL) revert VaultCapExceeded();
+        // Guard the uint128 capital cast (and the per-account checked add). The spec's
+        // engine-units MAX_VAULT_TVL cap is reintroduced in Milestone 2 once token ->
+        // engine-unit price normalization exists; raw 18-decimal token wei is not 1:1
+        // with engine quote-atom units, so it must not be compared against that bound here.
+        if (credited > type(uint128).max) revert AmountTooLarge();
 
         // effects
         Types.Account storage a = accounts[positionId];

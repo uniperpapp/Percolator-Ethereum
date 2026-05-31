@@ -79,7 +79,7 @@ Percolator's engine math is chain-agnostic; the work is in the runtime model. Ke
 | 3 — Vaults + factory | ERC-4626 LP + insurance, EIP-1167 factory, seeds + creator bond, fee split | ⏳ |
 | 4 — Hardening | Foundry invariants, Halmos, differential tests vs the Rust engine, audits | ⏳ |
 
-Implemented now: `Constants`, `FixedPointMath` (512-bit mulDiv), `Types`, `PerpMath`, `RiskEngine` (residual/conservation, `H`, effective matured PnL, risk notional, margin, equity lanes), **`SolvencyProof`** (the §1.6 bounded-breakpoint self-neutral-siphon proof, re-derived in seconds), and **`PerpMarket`** collateral custody (deposit/withdraw with `SafeERC20` + balance-delta accounting + `nonReentrant`/CEI, config + §1.6 validation at init). 57 passing tests including conservation fuzzing and a reentrancy attack. Trade/liquidate revert pending Milestone 2.
+Implemented now: `Constants`, `FixedPointMath` (512-bit mulDiv), `Types`, `PerpMath`, `RiskEngine` (residual/conservation, `H`, effective matured PnL, risk notional, margin, equity lanes), **`SolvencyProof`** (the §1.6 bounded-breakpoint self-neutral-siphon proof, re-derived in seconds), and **`PerpMarket`** collateral custody (deposit/withdraw with `SafeERC20` + balance-delta accounting + `nonReentrant`/CEI, config + §1.6 validation at init). 56 passing tests including conservation fuzzing and a reentrancy attack. Trade/liquidate revert pending Milestone 2.
 
 ## Build & test
 

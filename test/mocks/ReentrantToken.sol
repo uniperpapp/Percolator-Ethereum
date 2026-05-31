@@ -58,7 +58,10 @@ contract ReentrantToken {
     function runAttack(address market_, uint256 amount) external {
         market = IPerpMarket(market_);
         mint(address(this), amount);
-        approve(market_, amount);
+        // Set the allowance with THIS token contract as owner (it is the depositor).
+        // A plain internal `approve(...)` call would record msg.sender (the external
+        // caller), not this contract, so write the mapping directly.
+        allowance[address(this)][market_] = type(uint256).max;
         positionId = market.deposit(0, amount);
         armed = true;
         market.withdraw(positionId, amount, address(this));

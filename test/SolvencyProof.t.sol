@@ -33,7 +33,11 @@ contract SolvencyProofTest is Test {
         p.maintenanceBps = 1000; // 10%
         p.liquidationFeeBps = 50; // 0.5%
         p.liquidationFeeCap = 1e30;
-        // total ~ 1% (price) + ~0.5% (liq fee) = 1.5% << 10% -> holds
+        // minNonzeroMmReq must cover the worst small-N case: at low N the ceil rounding
+        // on loss and on liq_fee each contribute >= 1, so the maintenance floor has to
+        // absorb that constant. With proportional maintenance ~1.5% << 10%, a floor of
+        // 100 covers the whole floor region; the tail is then slope-dominated.
+        p.minNonzeroMmReq = 100;
         assertTrue(SolvencyProof.validate(p));
     }
 

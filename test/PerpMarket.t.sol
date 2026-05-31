@@ -4,7 +4,6 @@ pragma solidity 0.8.28;
 import {Test} from "forge-std/Test.sol";
 import {PerpMarket} from "../src/PerpMarket.sol";
 import {Types} from "../src/libraries/Types.sol";
-import {Constants} from "../src/libraries/Constants.sol";
 import {IOracleAdapter} from "../src/interfaces/IOracleAdapter.sol";
 import {IMatcher} from "../src/interfaces/IMatcher.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
@@ -144,12 +143,14 @@ contract PerpMarketTest is Test {
         assertEq(fot.balanceOf(address(m)), 98 ether);
     }
 
-    function test_deposit_vault_cap() public {
-        // mint a whale enough to exceed MAX_VAULT_TVL and expect the cap to bite
-        token.mint(alice, Constants.MAX_VAULT_TVL + 1 ether);
+    function test_deposit_amount_too_large_guarded() public {
+        // A single credited amount above uint128 max must revert (protects the uint128
+        // capital cast). Realistic deposits are far below this.
+        uint256 tooBig = uint256(type(uint128).max) + 1;
+        token.mint(alice, tooBig);
         vm.prank(alice);
-        vm.expectRevert(PerpMarket.VaultCapExceeded.selector);
-        market.deposit(0, Constants.MAX_VAULT_TVL + 1);
+        vm.expectRevert(PerpMarket.AmountTooLarge.selector);
+        market.deposit(0, tooBig);
     }
 
     // ---- withdraw ----
