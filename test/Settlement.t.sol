@@ -96,14 +96,17 @@ contract SettlementTest is Test {
     }
 
     function test_kf_pnl_delta_funding_component() public view {
-        // Pure funding: F diff contributes fDiff / (aBasis*POS_SCALE) per the formula,
-        // delta = floor(|basis| * fDiff / (aBasis*POS_SCALE*FUNDING_DEN)).
-        // Pick fNum = aBasis*POS_SCALE*FUNDING_DEN / |basis| so delta == 1.
-        // = 1e15*1e6*1e9 / 1e6 = 1e30/1 ... use fNum = 1e15*1e6*1e9 = 1e30, basis=1e6 -> delta=1.
+        // Pure funding (kDiff = 0): delta = floor(|basis| * fNum / (aBasis*POS_SCALE*FUNDING_DEN)).
+        // With basis = aBasis = A1 this is floor(fNum / (POS_SCALE*FUNDING_DEN)) = floor(fNum / 1e15).
+        // Pick fNum = A1*FUNDING_DEN = 1e24 so delta = floor(1e6 * 1e24 / 1e30) = 1.
         Types.Account memory a = _acct(int256(1 * E6), A1, 0, 0, 0);
-        int256 fNum = int256(A1 * E6 * Constants.FUNDING_DEN); // 1e30
+        int256 fNum = int256(A1 * Constants.FUNDING_DEN); // 1e24
         Types.SideState memory s = _side(A1, 0, fNum, 0);
         assertEq(h.kfPnlDelta(a, s), int256(1));
+
+        // Linearity: 1e6x the funding numerator scales delta to 1e6.
+        Types.SideState memory s2 = _side(A1, 0, fNum * int256(E6), 0);
+        assertEq(h.kfPnlDelta(a, s2), int256(1 * E6));
     }
 
     function test_kf_pnl_delta_zero_when_flat() public view {

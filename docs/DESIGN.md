@@ -35,7 +35,9 @@ math** that ports to Solidity *more* cleanly than it ran on Solana — EVM's nat
 | Collateral custody (deposit/withdraw) | §8 | ✅ `PerpMarket` (SafeERC20 + balance-delta + nonReentrant/CEI) |
 | **A/K/F** accrual math (mark→K, funding→F, staircase) | §5.3/§1.7 | ✅ `Accrual` (`accrue`, `staircaseNext`) |
 | **A/K/F** per-account settlement (effective pos, pnl delta) | §5.1/§5.2 | ✅ `Settlement` (`effectivePosQ`, `kfPnlDelta`) |
-| A/K/F wired into market (`_accrueMarket` + `_touch`) | §5/§6 | ⏳ milestone 2 (trade/liquidate paths) |
+| Oracle adapter (raw target, staleness) | §1.7 | ✅ `PushOracleAdapter` (Chainlink/Uniswap-TWAP adapters later) |
+| Matcher (oracle±spread quoter) | matcher | ✅ `DefaultMatcher` |
+| A/K/F wired into market (`_accrueMarket` + `_touch`) + trade | §5/§6/§8.5 | ⏳ milestone 2 (trade/liquidate paths) |
 | **Warmup / admission** (`admit_h_min > 0`) | §4.3 | ⏳ milestone 2 (two-bucket reserve) |
 | Liquidation + ADL socialization | §5.4/§7 | ⏳ milestone 2 |
 
