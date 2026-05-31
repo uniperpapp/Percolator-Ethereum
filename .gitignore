@@ -1,0 +1,22 @@
+# Foundry
+out/
+cache/
+broadcast/
+# keep broadcast/**/dry-run out
+broadcast/*/*/dry-run/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Node (frontend/keeper added later)
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.log
