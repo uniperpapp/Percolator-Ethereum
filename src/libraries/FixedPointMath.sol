@@ -81,4 +81,18 @@ library FixedPointMath {
     function abs(int256 x) internal pure returns (uint256) {
         return x < 0 ? uint256(-x) : uint256(x);
     }
+
+    /// @notice floor(numerator / denominator) toward NEGATIVE INFINITY (denominator > 0).
+    ///         Solidity `/` truncates toward zero; for negative numerators that rounds the
+    ///         WRONG way (toward the trader). The A/K/F pnl_delta is specified floor-to-(-inf)
+    ///         so losses round against the trader / in the vault's favor (spec §5.2).
+    function divFloorSigned(int256 numerator, int256 denominator) internal pure returns (int256) {
+        require(denominator > 0, "den<=0");
+        int256 q = numerator / denominator;
+        // If there is a remainder and the (negative) signs disagree, step down by one.
+        if (numerator % denominator != 0 && numerator < 0) {
+            q -= 1;
+        }
+        return q;
+    }
 }

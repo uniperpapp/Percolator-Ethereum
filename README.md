@@ -75,7 +75,7 @@ Percolator's engine math is chain-agnostic; the work is in the runtime model. Ke
 |---|---|---|
 | 0 — Foundations | Foundry scaffold, fixed-point + rounding, constants, types, **safety-core math + tests** | ✅ |
 | 1 — Custody + config | deposit/withdraw, account lifecycle, equity/margin lanes, reentrancy safety, **§1.6 solvency proof (seconds)** validated at init | ✅ |
-| 2 — Accrual + trade + liquidate | lazy `accrueMarket`, A/K/F per-account settlement, matcher, oracle adapter, liquidation + ADL, warmup | ⏳ next |
+| 2 — Accrual + trade + liquidate | **accrual + settlement math (`Accrual`, `Settlement`)** ✅; trade, matcher, oracle adapter, liquidation + ADL, warmup wiring ⏳ | 🔄 in progress |
 | 3 — Vaults + factory | ERC-4626 LP + insurance, EIP-1167 factory, seeds + creator bond, fee split | ⏳ |
 | 4 — Hardening | Foundry invariants, Halmos, differential tests vs the Rust engine, audits | ⏳ |
 

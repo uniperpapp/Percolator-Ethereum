@@ -33,9 +33,31 @@ math** that ports to Solidity *more* cleanly than it ran on Solana — EVM's nat
 | Risk notional (ceil) + margin | §1.2/§7 | ✅ `RiskEngine.riskNotional` / `maintenanceReq` / `initialReq` |
 | Per-risk-notional **solvency proof** (in seconds) | §1.6 | ✅ `SolvencyProof.validate`, called in `initialize` |
 | Collateral custody (deposit/withdraw) | §8 | ✅ `PerpMarket` (SafeERC20 + balance-delta + nonReentrant/CEI) |
-| **A/K/F** lazy side indices (mark, funding, ADL) | §5 | ⏳ milestone 2 (`PerpMarket._accrueMarket` + `_touch`) |
+| **A/K/F** accrual math (mark→K, funding→F, staircase) | §5.3/§1.7 | ✅ `Accrual` (`accrue`, `staircaseNext`) |
+| **A/K/F** per-account settlement (effective pos, pnl delta) | §5.1/§5.2 | ✅ `Settlement` (`effectivePosQ`, `kfPnlDelta`) |
+| A/K/F wired into market (`_accrueMarket` + `_touch`) | §5/§6 | ⏳ milestone 2 (trade/liquidate paths) |
 | **Warmup / admission** (`admit_h_min > 0`) | §4.3 | ⏳ milestone 2 (two-bucket reserve) |
 | Liquidation + ADL socialization | §5.4/§7 | ⏳ milestone 2 |
+
+### Margining unit convention (decided while porting §5)
+
+The engine core uses **linear, quote-denominated** mark PnL: `K_side += A_side·ΔP` and
+`pnl_delta = basis·ΔP / POS_SCALE` (= base_position · ΔP). It is unit-agnostic — the
+"quote token" is whatever the vault holds. Coin-margining means **the vault token is the
+traded coin**, so PnL and collateral are denominated in that coin. The SDK's display
+helper `PerpMath.markPnl` uses the inverse form `(oracle−entry)·|pos|/oracle` (PnL measured
+in the base coin); that is a *front-end display* convention, not the engine's internal
+accounting. The engine port (`Accrual`/`Settlement`) faithfully reproduces the Rust engine's
+linear K-model. The exact price representation fed to the engine (and thus the precise
+coin-vs-USD margining semantics) is finalized when the `OracleAdapter` is wired — the engine
+math does not change.
+
+### K/F width
+
+`SideState.k` / `fNum` are `int256` here (the spec uses `i128` only because Solana lacks a
+native 256-bit word). All intermediates use `int256`; persistent adds are checked (revert on
+overflow = the spec's "fails conservatively"). EVM's native word removes the i128 overflow
+pressure the spec's §1.6 budget was partly designed around.
 
 ### Milestone 1 notes
 

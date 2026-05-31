@@ -97,8 +97,8 @@ contract PerpMarket is ReentrancyGuard {
         factory = msg.sender;
 
         // Each side's A starts at ADL_ONE ("1.0").
-        g.longSide.a = uint128(Constants.ADL_ONE);
-        g.shortSide.a = uint128(Constants.ADL_ONE);
+        g.longSide.a = Constants.ADL_ONE;
+        g.shortSide.a = Constants.ADL_ONE;
         g.slotLast = uint64(block.timestamp);
 
         emit Initialized(cfg.collateralToken, admin_);
@@ -182,15 +182,14 @@ contract PerpMarket is ReentrancyGuard {
         token.safeTransferFrom(msg.sender, address(this), amount);
         uint256 credited = token.balanceOf(address(this)) - balBefore;
         if (credited == 0) revert ZeroAmount();
-        // Guard the uint128 capital cast (and the per-account checked add). The spec's
-        // engine-units MAX_VAULT_TVL cap is reintroduced in Milestone 2 once token ->
-        // engine-unit price normalization exists; raw 18-decimal token wei is not 1:1
-        // with engine quote-atom units, so it must not be compared against that bound here.
+        // Conservative per-deposit sanity bound. The spec's engine-units MAX_VAULT_TVL
+        // cap is reintroduced once token -> engine-unit price normalization exists
+        // (raw 18-decimal token wei is not 1:1 with engine quote-atom units).
         if (credited > type(uint128).max) revert AmountTooLarge();
 
         // effects
         Types.Account storage a = accounts[positionId];
-        a.capital += uint128(credited);
+        a.capital += credited;
         g.cTot += credited;
         g.vault += credited;
 
@@ -231,7 +230,7 @@ contract PerpMarket is ReentrancyGuard {
         }
 
         // effects (CEI)
-        a.capital -= uint128(amount);
+        a.capital -= amount;
         g.cTot -= amount;
         g.vault -= amount;
 
