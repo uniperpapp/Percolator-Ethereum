@@ -29,11 +29,28 @@ math** that ports to Solidity *more* cleanly than it ran on Solana — EVM's nat
 |---|---|---|
 | Master invariant `V ≥ C_tot + I` | §0/§2.2 | ✅ `RiskEngine.assertConservation` |
 | **H** — haircut; positive PnL junior to `Residual` | §3 | ✅ `RiskEngine.haircutRatio` / `effectiveMaturedPnl` |
+| Equity lanes (withdraw / maintenance / net) | §3 | ✅ `RiskEngine.withdrawEquity` / `maintenanceEquity` / `netEquity` |
 | Risk notional (ceil) + margin | §1.2/§7 | ✅ `RiskEngine.riskNotional` / `maintenanceReq` / `initialReq` |
+| Per-risk-notional **solvency proof** (in seconds) | §1.6 | ✅ `SolvencyProof.validate`, called in `initialize` |
+| Collateral custody (deposit/withdraw) | §8 | ✅ `PerpMarket` (SafeERC20 + balance-delta + nonReentrant/CEI) |
 | **A/K/F** lazy side indices (mark, funding, ADL) | §5 | ⏳ milestone 2 (`PerpMarket._accrueMarket` + `_touch`) |
-| **Warmup / admission** (`admit_h_min > 0`) | §4.3 | ⏳ milestone 1/2 (two-bucket reserve) |
+| **Warmup / admission** (`admit_h_min > 0`) | §4.3 | ⏳ milestone 2 (two-bucket reserve) |
 | Liquidation + ADL socialization | §5.4/§7 | ⏳ milestone 2 |
-| Per-risk-notional **solvency proof** (in seconds) | §1.6 | ⏳ milestone 1 (constructor `require`) |
+
+### Milestone 1 notes
+
+- **§1.6 proof port.** `SolvencyProof.validate` is a faithful port of the Rust
+  `validate_exact_solvency_envelope` (engine `percolator.rs:1571–1941`): the analytic
+  region decomposition (full-margin special case → floor region → linear / capped-fee
+  tail bounds) plus bounded interval bisection with monotonicity certificates. Bounded
+  work (≤96 intervals, ≤4096 steps); measured ~6k–15k gas on the pass path, cheap enough
+  for the market-creation tx. It is re-established symbolically (Halmos/Certora) in M4.
+- **CAVEAT — per-second rate granularity.** `maxPriceMoveBpsPerSec` is an integer bps
+  per second (the spec used bps per 400 ms slot). The minimum nonzero rate (1 bps/s) is
+  coarse over long `maxAccrualDtSec` windows (e.g. 3600 bps over 1 h). If finer control
+  is needed at calibration, switch the rate unit to an e9-scaled fixed point (and divide
+  by the scale in the envelope) — a localized change to `Types.MarketConfig` +
+  `SolvencyProof` + the M2 accrual check. The proof math itself is unit-agnostic.
 
 ## 3. Smart-contract architecture
 

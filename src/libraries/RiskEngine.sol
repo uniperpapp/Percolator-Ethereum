@@ -51,15 +51,15 @@ library RiskEngine {
     }
 
     /// @notice Effective (haircut) matured PnL for one account:
-    ///         floor(releasedPos * h.num / h.den). Floor is conservative (favors vault).
-    function effectiveMaturedPnl(uint256 releasedPos, uint256 residual_, uint256 maturedPosTot)
+    ///         floor(released * h.num / h.den). Floor is conservative (favors vault).
+    function effectiveMaturedPnl(uint256 released, uint256 residual_, uint256 maturedPosTot)
         internal
         pure
         returns (uint256)
     {
         Types.Ratio memory h = haircutRatio(residual_, maturedPosTot);
-        if (h.num == h.den) return releasedPos; // h == 1 fast path
-        return FixedPointMath.mulDivDown(releasedPos, h.num, h.den);
+        if (h.num == h.den) return released; // h == 1 fast path
+        return FixedPointMath.mulDivDown(released, h.num, h.den);
     }
 
     /// @notice Risk notional uses CEIL so fractional-notional dust still carries margin:
@@ -89,5 +89,64 @@ library RiskEngine {
         if (riskNotional_ == 0) return 0;
         uint256 r = FixedPointMath.mulDivDown(riskNotional_, initialBps, Constants.BPS_DENOM);
         return r > minNonzeroIm ? r : minNonzeroIm;
+    }
+
+    // ---------------------------------------------------------------------
+    // Equity lanes (spec §3). All exact in int256.
+    //   FeeDebt_i        = -min(feeCredits_i, 0)            (>= 0)
+    //   ReleasedPos_i    = max(PNL_i,0) - R_i               (Live)
+    //   Eq_withdraw_raw  = C_i + min(PNL_i,0) + PNL_eff_matured_i - FeeDebt_i
+    //   Eq_maint_raw     = C_i + PNL_i - FeeDebt_i
+    //   Eq_net           = max(0, Eq_maint_raw)
+    // The withdraw lane credits only HAIRCUT MATURED PnL; the maintenance lane uses
+    // raw full PnL — the asymmetry that lets unrealized gains support margin but not
+    // be withdrawn until they mature and the haircut releases them.
+    // ---------------------------------------------------------------------
+
+    /// @notice FeeDebt_i = -min(feeCredits_i, 0). feeCredits is always <= 0.
+    function feeDebt(int256 feeCredits) internal pure returns (uint256) {
+        return feeCredits < 0 ? uint256(-feeCredits) : 0;
+    }
+
+    /// @notice ReleasedPos_i = max(PNL_i,0) - R_i (Live). Reverts implicitly if the
+    ///         live reserve invariant R_i <= max(PNL_i,0) is broken (caller-enforced).
+    function releasedPos(int256 pnl, uint256 reservedPnl) internal pure returns (uint256) {
+        uint256 posPnl = pnl > 0 ? uint256(pnl) : 0;
+        return posPnl - reservedPnl; // underflow-guarded by Solidity 0.8 checked math
+    }
+
+    /// @notice Withdrawal-lane equity: C_i + min(PNL_i,0) + haircut(matured) - FeeDebt_i.
+    function withdrawEquity(
+        uint256 capital,
+        int256 pnl,
+        uint256 reservedPnl,
+        int256 feeCredits,
+        uint256 residual_,
+        uint256 maturedPosTot
+    ) internal pure returns (int256) {
+        uint256 effMatured = effectiveMaturedPnl(
+            releasedPos(pnl, reservedPnl), residual_, maturedPosTot
+        );
+        int256 negPnl = pnl < 0 ? pnl : int256(0);
+        return int256(capital) + negPnl + int256(effMatured) - int256(feeDebt(feeCredits));
+    }
+
+    /// @notice Maintenance-lane equity (raw, may be negative): C_i + PNL_i - FeeDebt_i.
+    function maintenanceEquity(uint256 capital, int256 pnl, int256 feeCredits)
+        internal
+        pure
+        returns (int256)
+    {
+        return int256(capital) + pnl - int256(feeDebt(feeCredits));
+    }
+
+    /// @notice Eq_net_i = max(0, Eq_maint_raw_i).
+    function netEquity(uint256 capital, int256 pnl, int256 feeCredits)
+        internal
+        pure
+        returns (uint256)
+    {
+        int256 e = maintenanceEquity(capital, pnl, feeCredits);
+        return e > 0 ? uint256(e) : 0;
     }
 }

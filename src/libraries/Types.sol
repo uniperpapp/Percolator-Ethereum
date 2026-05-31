@@ -50,17 +50,23 @@ library Types {
     }
 
     /// Immutable per-market configuration (set once at createMarket).
+    /// Fields map 1:1 to the Percolator engine's RiskParams (spec §1.5), with
+    /// every per-slot budget re-expressed PER SECOND for Ethereum L1.
     struct MarketConfig {
         address collateralToken; // coin-margined: collateral == the traded ERC-20
-        uint16 initialMarginBps; // maxLeverage = 10000 / initialMarginBps
-        uint16 maintenanceBps;
-        uint16 tradingFeeBps;
-        uint16 liquidationFeeBps;
-        uint64 maxPriceMoveBpsPerSec; // price-move envelope, per SECOND (L1: 12s blocks)
-        uint64 maxAccrualDtSec; // max elapsed time per accrual step
+        uint16 initialMarginBps; // cfg_initial_bps; maxLeverage = 10000 / initialMarginBps
+        uint16 maintenanceBps; // cfg_maintenance_bps (<= initialMarginBps)
+        uint16 tradingFeeBps; // cfg_trading_fee_bps
+        uint16 liquidationFeeBps; // cfg_liquidation_fee_bps
+        uint64 maxPriceMoveBpsPerSec; // cfg_max_price_move_bps_per_sec (price-move envelope)
+        uint64 maxAccrualDtSec; // cfg_max_accrual_dt_sec (max elapsed per accrual step)
+        uint64 maxAbsFundingE9PerSec; // cfg_max_abs_funding_e9_per_sec
         uint64 warmupMinSec; // admit_h_min horizon (warmup vesting)
         uint64 warmupMaxSec; // admit_h_max horizon
-        uint256 minLiquidationFee; // absolute floor so liquidations stay gas-viable on L1
+        uint256 minLiquidationAbs; // cfg_min_liquidation_abs (L1 gas-viability floor)
+        uint256 liquidationFeeCap; // cfg_liquidation_fee_cap
+        uint256 minNonzeroMmReq; // cfg_min_nonzero_mm_req
+        uint256 minNonzeroImReq; // cfg_min_nonzero_im_req
     }
 
     /// Haircut ratio expressed as an exact fraction (num/den), h in [0,1].

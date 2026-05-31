@@ -74,12 +74,12 @@ Percolator's engine math is chain-agnostic; the work is in the runtime model. Ke
 | Milestone | Scope | State |
 |---|---|---|
 | 0 — Foundations | Foundry scaffold, fixed-point + rounding, constants, types, **safety-core math + tests** | ✅ |
-| 1 — MVP engine | deposit/withdraw, positions, margin checks, lazy per-account settlement, §1.6 proof (seconds) | ⏳ next |
-| 2 — Accrual + trade + liquidate | lazy `accrueMarket`, matcher, oracle adapter, liquidation + ADL | ⏳ |
+| 1 — Custody + config | deposit/withdraw, account lifecycle, equity/margin lanes, reentrancy safety, **§1.6 solvency proof (seconds)** validated at init | ✅ |
+| 2 — Accrual + trade + liquidate | lazy `accrueMarket`, A/K/F per-account settlement, matcher, oracle adapter, liquidation + ADL, warmup | ⏳ next |
 | 3 — Vaults + factory | ERC-4626 LP + insurance, EIP-1167 factory, seeds + creator bond, fee split | ⏳ |
 | 4 — Hardening | Foundry invariants, Halmos, differential tests vs the Rust engine, audits | ⏳ |
 
-Implemented now: `Constants`, `FixedPointMath` (512-bit mulDiv), `Types`, `PerpMath`, `RiskEngine` (residual/conservation, `H`, effective matured PnL, risk notional, margin), `PerpMarket`/`PerpFactory` scaffolds, and tests for all the pure math.
+Implemented now: `Constants`, `FixedPointMath` (512-bit mulDiv), `Types`, `PerpMath`, `RiskEngine` (residual/conservation, `H`, effective matured PnL, risk notional, margin, equity lanes), **`SolvencyProof`** (the §1.6 bounded-breakpoint self-neutral-siphon proof, re-derived in seconds), and **`PerpMarket`** collateral custody (deposit/withdraw with `SafeERC20` + balance-delta accounting + `nonReentrant`/CEI, config + §1.6 validation at init). 67 passing tests including conservation fuzzing and a reentrancy attack. Trade/liquidate revert pending Milestone 2.
 
 ## Build & test
 

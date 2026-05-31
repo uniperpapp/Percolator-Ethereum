@@ -25,6 +25,8 @@ library Constants {
     uint256 internal constant MAX_VAULT_TVL = 10_000_000_000_000_000; // 1e16
     uint256 internal constant MAX_POSITION_ABS_Q = 100_000_000_000_000; // 1e14
     uint256 internal constant MAX_OI_SIDE_Q = 100_000_000_000_000; // 1e14
+    /// upper bound on an account's risk notional; the §1.6 solvency proof domain.
+    uint256 internal constant MAX_ACCOUNT_NOTIONAL = 100_000_000_000_000_000_000; // 1e20
 
     /// max liquidation price sentinel (short positions are unliquidatable when
     /// maintenance margin >= 100%); mirrors the SDK's max-u64 sentinel.
